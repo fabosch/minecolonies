@@ -2,6 +2,7 @@ package com.minecolonies.core.client.gui.citizen;
 
 import com.google.common.collect.ImmutableList;
 import com.minecolonies.api.colony.ICitizenDataView;
+import com.minecolonies.api.colony.IColonyManager;
 import com.minecolonies.api.colony.buildings.views.IBuildingView;
 import com.minecolonies.api.colony.requestsystem.request.IRequest;
 import com.minecolonies.api.colony.requestsystem.request.RequestState;
@@ -14,7 +15,7 @@ import com.minecolonies.api.util.constant.Constants;
 import com.minecolonies.core.Network;
 import com.minecolonies.core.network.messages.server.colony.UpdateRequestStateMessage;
 import com.minecolonies.core.network.messages.server.colony.citizen.TransferItemsToCitizenRequestMessage;
-import com.minecolonies.core.client.gui.requesttree.CitizenRequestRequestTreeHandler;
+import com.minecolonies.core.client.gui.requesttree.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
@@ -63,13 +64,29 @@ public class RequestWindowCitizen extends AbstractWindowCitizen
 
         this.requestTreeHandler = new CitizenRequestRequestTreeHandler(
           citizen.getWorkBuilding(),
-          IColonyManager.getInstance().getColonyView(citizen.getColonyId(), Minecraft.getInstance().level.dimension()),
+          this.colony,
           this);
     }
 
     public ICitizenDataView getCitizen()
     {
         return citizen;
+    }
+
+    @Override
+    public void onUpdate()
+    {
+        super.onUpdate();
+
+        this.requestTreeHandler.onWindowUpdate();
+    }
+
+    @Override
+    public void onOpened()
+    {
+        super.onOpened();
+
+        this.requestTreeHandler.onWindowOpened();
     }
 
     // callled by WindowRequestDetail

@@ -1,13 +1,63 @@
+package com.minecolonies.core.client.gui.requesttree;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.common.reflect.TypeToken;
+import com.ldtteam.blockui.Color;
+import com.ldtteam.blockui.controls.Button;
+import com.ldtteam.blockui.views.ZoomDragView;
+import com.minecolonies.api.colony.ICitizenDataView;
+import com.minecolonies.api.colony.IColonyView;
+import com.minecolonies.api.colony.buildings.views.IBuildingView;
+import com.minecolonies.api.colony.requestsystem.manager.IRequestManager;
+import com.minecolonies.api.colony.requestsystem.request.IRequest;
+import com.minecolonies.api.colony.requestsystem.request.RequestState;
+import com.minecolonies.api.colony.requestsystem.requestable.MinimumStack;
+import com.minecolonies.api.colony.requestsystem.resolver.player.IPlayerRequestResolver;
+import com.minecolonies.api.colony.requestsystem.resolver.retrying.IRetryingRequestResolver;
+import com.minecolonies.api.colony.requestsystem.token.IToken;
+import com.minecolonies.api.util.Log;
+import com.minecolonies.api.util.constant.Constants;
+import com.minecolonies.core.Network;
+import com.minecolonies.core.client.gui.AbstractWindowSkeleton;
+import com.minecolonies.core.items.ItemClipboard;
+import com.minecolonies.core.network.messages.server.ItemSettingMessage;
+import com.minecolonies.core.network.messages.server.colony.UpdateRequestStateMessage;
+import com.minecolonies.core.client.gui.requesttree.ClipBoardRequestTreeHandler;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Vec3i;
+import net.minecraft.network.chat.Component;
+
+import org.jetbrains.annotations.NotNull;
+
+import java.util.*;
+
+import static com.minecolonies.api.util.constant.WindowConstants.CLIPBOARD_TOGGLE;
+
 public class ClipBoardRequestTreeHandler extends DefaultRequestTreeHandler {
     /**
      * Hide or show not important requests.
      */
     private boolean hide = false;
 
+    /**
+     * List of async request tokens.
+     */
+    private final List<IToken<?>> asyncRequest = new ArrayList<>();
+
     public ClipBoardRequestTreeHandler(final BlockPos building, final IColonyView colony, final AbstractWindowSkeleton attachedWindow, final boolean hideValue)
     {
         super(building, colony, attachedWindow);
         this.hide = hideValue;
+
+        for (final ICitizenDataView view : this.colony.getCitizens().values())
+        {
+            if (view.getJobView() != null)
+            {
+                asyncRequest.addAll(view.getJobView().getAsyncRequests());
+            }
+        }
     }
 
     public boolean getHideValue()
@@ -93,7 +143,7 @@ public class ClipBoardRequestTreeHandler extends DefaultRequestTreeHandler {
     }
 
     @Override
-    protected void cancel(@NotNull final IRequest<?> request)
+    public void cancel(@NotNull final IRequest<?> request)
     {
         Network.getNetwork().sendToServer(new UpdateRequestStateMessage(colony, request.getId(), RequestState.CANCELLED, null));
     }

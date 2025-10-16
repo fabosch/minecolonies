@@ -1,4 +1,4 @@
-package com.minecolonies.core.client.gui;
+package com.minecolonies.core.client.gui.requesttree;
 
 import com.google.common.collect.ImmutableList;
 import com.minecolonies.api.colony.requestsystem.requestable.IStackBasedTask;
@@ -17,11 +17,14 @@ import com.minecolonies.api.colony.requestsystem.requestable.IDeliverable;
 import com.minecolonies.api.colony.requestsystem.token.IToken;
 import com.minecolonies.api.util.InventoryUtils;
 import com.minecolonies.core.Network;
+import com.minecolonies.core.client.gui.AbstractWindowSkeleton;
+import com.minecolonies.core.client.gui.WindowRequestDetail;
 import com.minecolonies.core.client.gui.citizen.MainWindowCitizen;
 import com.minecolonies.core.colony.requestsystem.requesters.IBuildingBasedRequester;
 import com.minecolonies.core.colony.requestsystem.requests.StandardRequests;
 import com.minecolonies.core.network.messages.server.colony.UpdateRequestStateMessage;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
@@ -124,7 +127,7 @@ public class DefaultRequestTreeHandler
         if (colony == null)
         {
             Log.getLogger().warn("Colony and/or building null, closing window.");
-            close();
+            this.attachedWindow.close();
         }
     }
 
@@ -150,7 +153,7 @@ public class DefaultRequestTreeHandler
      *
      * @param request the request to cancel.
      */
-    protected void cancel(@NotNull final IRequest<?> request)
+    public void cancel(@NotNull final IRequest<?> request)
     {
         building.onRequestedRequestCancelled(colony.getRequestManager(), request);
         Network.getNetwork().sendToServer(new UpdateRequestStateMessage(colony, request.getId(), RequestState.CANCELLED, null));
@@ -287,7 +290,7 @@ public class DefaultRequestTreeHandler
 
         if (getOpenRequestTreeOfBuilding().size() > row)
         {
-            new WindowRequestDetail(this, getOpenRequestTreeOfBuilding().get(row).getRequest(), colony.getID()).open();
+            new WindowRequestDetail(this.attachedWindow, getOpenRequestTreeOfBuilding().get(row).getRequest(), colony.getID()).open();
         }
     }
 
@@ -296,6 +299,8 @@ public class DefaultRequestTreeHandler
      */
     protected void updateRequests()
     {
+        AbstractWindowSkeleton attachedWindow_ref = this.attachedWindow;
+
         resourceList.setDataProvider(new ScrollingList.DataProvider()
         {
             private List<RequestWrapper> requestWrappers = null;
@@ -373,7 +378,7 @@ public class DefaultRequestTreeHandler
                     rowPane.findPaneOfTypeByID(REQUEST_SHORT_DETAIL, Text.class).setText(Component.literal(request.getShortDisplayString().getString().replace("§f", "")).withStyle(ChatFormatting.BLACK));
                 }
 
-                PaneBuilders.tooltipBuilder().hoverPane(findPaneByID(REQUEST_DETAIL)).build().setText(Component.translatable(DETAILS));
+                PaneBuilders.tooltipBuilder().hoverPane(attachedWindow_ref.findPaneByID(REQUEST_DETAIL)).build().setText(Component.translatable(DETAILS));
                 if (!cancellable(request))
                 {
                     rowPane.findPaneOfTypeByID(REQUEST_CANCEL, ButtonImage.class).hide();
@@ -447,7 +452,7 @@ public class DefaultRequestTreeHandler
                 }
             }
 
-            if (this instanceof MainWindowCitizen && !((MainWindowCitizen) this).getCitizen().getInventory().hasSpace())
+            if (this.attachedWindow instanceof MainWindowCitizen && !((MainWindowCitizen) this.attachedWindow).getCitizen().getInventory().hasSpace())
             {
                 return false;
             }

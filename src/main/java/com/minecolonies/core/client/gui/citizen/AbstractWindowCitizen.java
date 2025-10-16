@@ -3,9 +3,11 @@ package com.minecolonies.core.client.gui.citizen;
 import com.ldtteam.blockui.PaneBuilders;
 import com.minecolonies.api.colony.ICitizenDataView;
 import com.minecolonies.api.colony.IColonyManager;
+import com.minecolonies.api.colony.IColonyView;
 import com.minecolonies.api.colony.buildings.ModBuildings;
 import com.minecolonies.api.colony.buildings.views.IBuildingView;
 import com.minecolonies.core.Network;
+import com.minecolonies.core.client.gui.AbstractWindowSkeleton;
 import com.minecolonies.core.colony.buildings.views.AbstractBuildingView;
 import com.minecolonies.core.debug.DebugPlayerManager;
 import com.minecolonies.core.debug.gui.DebugWindowCitizen;
@@ -19,6 +21,11 @@ import net.minecraft.network.chat.Component;
 public abstract class AbstractWindowCitizen extends AbstractWindowSkeleton
 {
     /**
+     * The colony of the citizen.
+     */
+    protected final IColonyView colony;
+
+    /**
      * Constructor to initiate the citizen windows.
      *
      * @param citizen citizen to bind the window to.
@@ -27,6 +34,8 @@ public abstract class AbstractWindowCitizen extends AbstractWindowSkeleton
     public AbstractWindowCitizen(final ICitizenDataView citizen, final String ui)
     {
         super(ui);
+
+        this.colony = IColonyManager.getInstance().getColonyView(citizen.getColonyId(), Minecraft.getInstance().level.dimension());
 
         registerButton("mainTab", () -> new MainWindowCitizen(citizen).open());
         registerButton("mainIcon", () -> new MainWindowCitizen(citizen).open());

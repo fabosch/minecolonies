@@ -1,6 +1,42 @@
+package com.minecolonies.core.client.gui.requesttree;
+
+import com.google.common.collect.ImmutableList;
+import com.minecolonies.api.colony.ICitizenDataView;
+import com.minecolonies.api.colony.IColonyManager;
+import com.minecolonies.api.colony.IColonyView;
+import com.minecolonies.api.colony.buildings.views.IBuildingView;
+import com.minecolonies.api.colony.requestsystem.request.IRequest;
+import com.minecolonies.api.colony.requestsystem.request.RequestState;
+import com.minecolonies.api.colony.requestsystem.requestable.IDeliverable;
+import com.minecolonies.api.colony.requestsystem.token.IToken;
+import com.minecolonies.api.util.InventoryUtils;
+import com.minecolonies.api.util.MessageUtils;
+import com.minecolonies.api.util.MessageUtils.MessagePriority;
+import com.minecolonies.api.util.constant.Constants;
+import com.minecolonies.core.Network;
+import com.minecolonies.core.client.gui.AbstractWindowSkeleton;
+import com.minecolonies.core.client.gui.citizen.RequestWindowCitizen;
+import com.minecolonies.core.network.messages.server.colony.UpdateRequestStateMessage;
+import com.minecolonies.core.network.messages.server.colony.citizen.TransferItemsToCitizenRequestMessage;
+import com.minecolonies.core.client.gui.requesttree.*;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.items.wrapper.InvWrapper;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.function.Predicate;
+
+import static com.minecolonies.api.util.constant.TranslationConstants.COM_MINECOLONIES_CANT_TAKE_EQUIPPED;
+import static com.minecolonies.api.util.constant.WindowConstants.CITIZEN_REQ_RESOURCE_SUFFIX;
+
 public class CitizenRequestRequestTreeHandler extends DefaultRequestTreeHandler {
 
-    public CitizenRequestRequestTreeHandler(final BlockPos building, final IColonyView colony, final RequestWindowCitizen attachedWindow)
+    public CitizenRequestRequestTreeHandler(final BlockPos building, final IColonyView colony, final AbstractWindowSkeleton attachedWindow)
     {
         super(building, colony, attachedWindow);
     }
@@ -14,7 +50,7 @@ public class CitizenRequestRequestTreeHandler extends DefaultRequestTreeHandler 
     @Override
     public ImmutableList<IRequest<?>> getOpenRequestsFromBuilding(final IBuildingView building)
     {
-        Citizen citizen = ((RequestWindowCitizen) this.attachedWindow).getCitizen();
+        ICitizenDataView citizen = ((RequestWindowCitizen) this.attachedWindow).getCitizen();
         
         if (building == null)
         {
@@ -52,7 +88,7 @@ public class CitizenRequestRequestTreeHandler extends DefaultRequestTreeHandler 
     @Override
     public void fulfill(@NotNull final IRequest<?> tRequest)
     {
-        Citizen citizen = ((RequestWindowCitizen) this.attachedWindow).getCitizen();
+        ICitizenDataView citizen = ((RequestWindowCitizen) this.attachedWindow).getCitizen();
 
         if (!(tRequest.getRequest() instanceof IDeliverable))
         {

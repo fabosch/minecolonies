@@ -44,10 +44,7 @@ public class WindowClipBoard extends AbstractWindowSkeleton
      */
     private static final String BUILD_TOOL_RESOURCE_SUFFIX = ":gui/windowclipboard.xml";
 
-    /**
-     * List of async request tokens.
-     */
-    private final List<IToken<?>> asyncRequest = new ArrayList<>();
+
 
     /**
      * The colony id.
@@ -70,14 +67,6 @@ public class WindowClipBoard extends AbstractWindowSkeleton
         this.colony = colony;
 
         this.requestTreeHandler = new ClipBoardRequestTreeHandler(null, colony, this, hidestate);
-
-        for (final ICitizenDataView view : this.colony.getCitizens().values())
-        {
-            if (view.getJobView() != null)
-            {
-                asyncRequest.addAll(view.getJobView().getAsyncRequests());
-            }
-        }
         
         registerButton(CLIPBOARD_TOGGLE, this::toggleImportant);
         paintButtonState();
@@ -127,7 +116,7 @@ public class WindowClipBoard extends AbstractWindowSkeleton
     {
         final Button importantToggle = findPaneOfTypeByID("important", Button.class);
 
-        if (this.hide)
+        if (this.requestTreeHandler.getHideValue())
         {
             importantToggle.setColors(Color.getByName("green", 0));
         }
