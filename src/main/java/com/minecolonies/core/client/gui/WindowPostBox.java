@@ -12,6 +12,7 @@ import com.minecolonies.core.Network;
 import com.minecolonies.core.colony.buildings.views.AbstractBuildingView;
 import com.minecolonies.core.network.messages.server.colony.OpenInventoryMessage;
 import com.minecolonies.core.network.messages.server.colony.building.postbox.PostBoxRequestMessage;
+import com.minecolonies.core.client.gui.requesttree.DefaultRequestTreeHandler;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.EnchantedBookItem;
 import net.minecraft.client.Minecraft;
@@ -28,7 +29,7 @@ import static com.minecolonies.api.util.constant.WindowConstants.*;
 /**
  * BOWindow for the replace block GUI.
  */
-public class WindowPostBox extends AbstractWindowRequestTree
+public class WindowPostBox extends AbstractWindowSkeleton
 {
     /**
      * Id of the deliver available button inside the GUI.
@@ -76,14 +77,23 @@ public class WindowPostBox extends AbstractWindowRequestTree
     private int tick;
 
     /**
+     * The request tree handler containing the logic for the request tree for the postbox.
+     */
+    private DefaultRequestTreeHandler requestTreeHandler;
+
+    /**
      * Create the postBox GUI.
      *
      * @param buildingView the building view.
      */
     public WindowPostBox(final AbstractBuildingView buildingView)
     {
-        super(buildingView.getID(), Constants.MOD_ID + WINDOW_POSTBOX, buildingView.getColony());
+        super(Constants.MOD_ID + WINDOW_POSTBOX);
+
+        this.requestTreeHandler = new DefaultRequestTreeHandler(buildingView.getID(), buildingView.getColony(), this);
+
         this.buildingView = buildingView;
+        
         this.stackList = findPaneOfTypeByID(LIST_RESOURCES, ScrollingList.class);
         registerButton(BUTTON_INVENTORY, this::inventoryClicked);
         registerButton(BUTTON_REQUEST, this::requestClicked);
@@ -157,6 +167,8 @@ public class WindowPostBox extends AbstractWindowRequestTree
         findPaneOfTypeByID(TAG_BUTTON_DELIVER_AVAILABLE, Button.class).setText(Component.literal(RED_X));
 
         updateResources();
+
+        this.requestTreeHandler.onWindowOpened();
     }
 
     /**
@@ -236,6 +248,8 @@ public class WindowPostBox extends AbstractWindowRequestTree
     public void onUpdate()
     {
         super.onUpdate();
+        this.requestTreeHandler.onWindowUpdate();
+        
         if (tick > 0 && --tick == 0)
         {
             updateResources();

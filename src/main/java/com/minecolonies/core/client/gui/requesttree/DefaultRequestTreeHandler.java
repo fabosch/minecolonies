@@ -40,9 +40,10 @@ import static com.minecolonies.api.util.constant.WindowConstants.*;
 import static com.minecolonies.core.colony.requestsystem.requests.AbstractRequest.MISSING;
 
 /**
- * BOWindow for the request trees.
+ * Handler for windows containing request trees.
+ * Replaced logic in AbstractWindowRequestTree
  */
-public abstract class AbstractWindowRequestTree extends AbstractWindowSkeleton
+public class DefaultRequestTreeHandler
 {
     /**
      * The colony of the citizen.
@@ -57,12 +58,12 @@ public abstract class AbstractWindowRequestTree extends AbstractWindowSkeleton
     /**
      * Inventory of the player.
      */
-    private final Inventory inventory = this.mc.player.getInventory();
+    protected final Inventory inventory = Minecraft.getInstance().player.getInventory();
 
     /**
      * Is the player in creative or not.
      */
-    private final boolean isCreative = this.mc.player.isCreative();
+    protected final boolean isCreative = Minecraft.getInstance().player.isCreative();
 
     /**
      * Life count.
@@ -74,34 +75,37 @@ public abstract class AbstractWindowRequestTree extends AbstractWindowSkeleton
      */
     private @Nullable final IBuildingView building;
 
+    /*
+     * The window this request tree is attached to.
+     */
+    protected final AbstractWindowSkeleton attachedWindow;
+
     /**
      * Constructor to initiate the window request tree windows.
      *
      * @param building citizen to bind the window to.
-     * @param pane     the string name of the pane.
      * @param colony   the colony it belongs to.
+     * @param attachedWindow the window this request tree is attached to.
      */
-    public AbstractWindowRequestTree(final BlockPos building, final String pane, final IColonyView colony)
+    public DefaultRequestTreeHandler(final BlockPos building, final IColonyView colony, final AbstractWindowSkeleton attachedWindow)
     {
-        super(pane);
-        this.colony = colony;
         this.building = colony.getBuilding(building);
-        resourceList = findPaneOfTypeByID(WINDOW_ID_LIST_REQUESTS, ScrollingList.class);
+        this.colony = colony;
+        this.attachedWindow = attachedWindow;
 
-        registerButton(REQUEST_DETAIL, this::detailedClicked);
-        registerButton(REQUEST_CANCEL, this::cancel);
+        resourceList = this.attachedWindow.findPaneOfTypeByID(WINDOW_ID_LIST_REQUESTS, ScrollingList.class);
+
+        this.attachedWindow.registerButton(REQUEST_DETAIL, this::detailedClicked);
+        this.attachedWindow.registerButton(REQUEST_CANCEL, this::cancel);
 
         if (canFulFill())
         {
-            registerButton(REQUEST_FULLFIL, this::fulfill);
+            this.attachedWindow.registerButton(REQUEST_FULLFIL, this::fulfill);
         }
     }
 
-    @Override
-    public void onUpdate()
+    public void onWindowUpdate()
     {
-        super.onUpdate();
-
         if (!Screen.hasShiftDown())
         {
             lifeCount++;
@@ -111,11 +115,8 @@ public abstract class AbstractWindowRequestTree extends AbstractWindowSkeleton
     /**
      * Called when the gui is opened by an player.
      */
-    @Override
-    public void onOpened()
+    public void onWindowOpened()
     {
-        super.onOpened();
-
         if (resourceList != null)
         {
             updateRequests();
