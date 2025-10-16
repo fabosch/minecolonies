@@ -143,7 +143,7 @@ public class PostboxRequestModuleWindow extends AbstractModuleWindow
             }
         }
 
-        Network.getNetwork().sendToServer(new PostBoxRequestMessage((AbstractBuildingView) this.buildingView, stack.copy(), qty, deliverAvailable));
+        Network.getNetwork().sendToServer(new PostBoxRequestMessage((AbstractBuildingView) buildingView, stack.copy(), qty, deliverAvailable));
     }
 
     private void deliverPartialClicked(@NotNull final Button button)

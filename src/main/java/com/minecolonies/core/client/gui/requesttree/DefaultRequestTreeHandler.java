@@ -299,8 +299,6 @@ public class DefaultRequestTreeHandler
      */
     protected void updateRequests()
     {
-        AbstractWindowSkeleton attachedWindow_ref = this.attachedWindow;
-
         resourceList.setDataProvider(new ScrollingList.DataProvider()
         {
             private List<RequestWrapper> requestWrappers = null;
@@ -378,7 +376,7 @@ public class DefaultRequestTreeHandler
                     rowPane.findPaneOfTypeByID(REQUEST_SHORT_DETAIL, Text.class).setText(Component.literal(request.getShortDisplayString().getString().replace("§f", "")).withStyle(ChatFormatting.BLACK));
                 }
 
-                PaneBuilders.tooltipBuilder().hoverPane(attachedWindow_ref.findPaneByID(REQUEST_DETAIL)).build().setText(Component.translatable(DETAILS));
+                PaneBuilders.tooltipBuilder().hoverPane(rowPane.findPaneByID(REQUEST_DETAIL)).build().setText(Component.translatable(DETAILS));
                 if (!cancellable(request))
                 {
                     rowPane.findPaneOfTypeByID(REQUEST_CANCEL, ButtonImage.class).hide();
