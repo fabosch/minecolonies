@@ -369,6 +369,9 @@ public class BuildingModules
     public static final BuildingEntry.ModuleProducer<WarehouseRequestQueueModule, WarehouseRequestTaskModuleView> WAREHOUSE_REQUEST_QUEUE     =
       new BuildingEntry.ModuleProducer<>("warehouse_request_queue", WarehouseRequestQueueModule::new, () -> WarehouseRequestTaskModuleView::new);
 
+    public static final BuildingEntry.ModuleProducer<PostboxRequestModule, PostboxRequestModuleView> POSTBOX_REQUEST =
+      new BuildingEntry.ModuleProducer<>("postbox_request", PostboxRequestModule::new, () -> PostboxRequestModuleView::new);
+
     /**
      * Education
      */

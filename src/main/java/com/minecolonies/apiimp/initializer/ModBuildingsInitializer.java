@@ -387,8 +387,10 @@ public final class ModBuildingsInitializer
         ModBuildings.postBox = DEFERRED_REGISTER.register(ModBuildings.POSTBOX_ID, () -> new BuildingEntry.Builder()
           .setBuildingBlock(ModBlocks.blockPostBox)
           .setBuildingProducer(PostBox::new)
-          .setBuildingViewProducer(() -> PostBox.View::new)
+          .setBuildingViewProducer(() -> EmptyView::new)
           .setRegistryName(new ResourceLocation(Constants.MOD_ID, ModBuildings.POSTBOX_ID))
+          .addBuildingModuleProducer(POSTBOX_REQUEST)
+          .addBuildingModuleProducer(MIN_STOCK)
           .createBuildingEntry());
 
         ModBuildings.florist = DEFERRED_REGISTER.register(ModBuildings.FLORIST_ID, () -> new BuildingEntry.Builder()
