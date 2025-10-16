@@ -1,4 +1,4 @@
-package com.minecolonies.core.client.gui;
+package com.minecolonies.core.client.gui.modules;
 
 import com.ldtteam.blockui.Pane;
 import com.ldtteam.blockui.controls.Button;
@@ -6,9 +6,13 @@ import com.ldtteam.blockui.controls.ItemIcon;
 import com.ldtteam.blockui.controls.Text;
 import com.ldtteam.blockui.controls.TextField;
 import com.ldtteam.blockui.views.ScrollingList;
+import com.minecolonies.api.colony.buildings.views.IBuildingView;
 import com.minecolonies.api.util.ItemStackUtils;
 import com.minecolonies.api.util.constant.Constants;
 import com.minecolonies.core.Network;
+import com.minecolonies.core.client.gui.AbstractModuleWindow;
+import com.minecolonies.core.client.gui.requesttree.DefaultRequestTreeHandler;
+import com.minecolonies.core.colony.buildings.moduleviews.PostboxRequestModuleView;
 import com.minecolonies.core.colony.buildings.views.AbstractBuildingView;
 import com.minecolonies.core.network.messages.server.colony.OpenInventoryMessage;
 import com.minecolonies.core.network.messages.server.colony.building.postbox.PostBoxRequestMessage;
@@ -28,8 +32,13 @@ import static com.minecolonies.api.util.constant.WindowConstants.*;
 /**
  * BOWindow for the replace block GUI.
  */
-public class WindowPostBox extends AbstractWindowRequestTree
+public class PostboxRequestModuleWindow extends AbstractModuleWindow
 {
+    /**
+     * Resource suffix of the GUI.
+     */
+    private static final String HUT_POSTBOX_REQUEST_RESOURCE_SUFFIX = ":gui/layouthuts/layoutpostboxrequest.xml";
+
     /**
      * Id of the deliver available button inside the GUI.
      */
@@ -56,11 +65,6 @@ public class WindowPostBox extends AbstractWindowRequestTree
     private final ScrollingList stackList;
 
     /**
-     * The building view of this window.
-     */
-    private final AbstractBuildingView buildingView;
-
-    /**
      * The filter for the resource list.
      */
     private String filter = "";
@@ -76,14 +80,21 @@ public class WindowPostBox extends AbstractWindowRequestTree
     private int tick;
 
     /**
+     * The request tree handler containing the logic for the request tree for the postbox.
+     */
+    private DefaultRequestTreeHandler requestTreeHandler;
+
+    /**
      * Create the postBox GUI.
      *
      * @param buildingView the building view.
      */
-    public WindowPostBox(final AbstractBuildingView buildingView)
+    public PostboxRequestModuleWindow(final IBuildingView buildingView, final PostboxRequestModuleView module)
     {
-        super(buildingView.getID(), Constants.MOD_ID + WINDOW_POSTBOX, buildingView.getColony());
-        this.buildingView = buildingView;
+        super(buildingView, Constants.MOD_ID + HUT_POSTBOX_REQUEST_RESOURCE_SUFFIX);
+
+        this.requestTreeHandler = new DefaultRequestTreeHandler(buildingView.getID(), buildingView.getColony(), this);
+
         this.stackList = findPaneOfTypeByID(LIST_RESOURCES, ScrollingList.class);
         registerButton(BUTTON_INVENTORY, this::inventoryClicked);
         registerButton(BUTTON_REQUEST, this::requestClicked);
@@ -132,7 +143,7 @@ public class WindowPostBox extends AbstractWindowRequestTree
             }
         }
 
-        Network.getNetwork().sendToServer(new PostBoxRequestMessage(buildingView, stack.copy(), qty, deliverAvailable));
+        Network.getNetwork().sendToServer(new PostBoxRequestMessage((AbstractBuildingView) buildingView, stack.copy(), qty, deliverAvailable));
     }
 
     private void deliverPartialClicked(@NotNull final Button button)
@@ -157,6 +168,8 @@ public class WindowPostBox extends AbstractWindowRequestTree
         findPaneOfTypeByID(TAG_BUTTON_DELIVER_AVAILABLE, Button.class).setText(Component.literal(RED_X));
 
         updateResources();
+
+        this.requestTreeHandler.onWindowOpened();
     }
 
     /**
@@ -165,12 +178,12 @@ public class WindowPostBox extends AbstractWindowRequestTree
     private void updateResources()
     {
         final Predicate<ItemStack> filterPredicate = stack -> filter.isEmpty()
-                                                                || stack.getDescriptionId().toLowerCase(Locale.US).contains(filter.toLowerCase(Locale.US))
-                                                                || stack.getHoverName().getString().toLowerCase(Locale.US).contains(filter.toLowerCase(Locale.US))
-                                                                || (stack.getItem() instanceof EnchantedBookItem && EnchantedBookItem.getEnchantments(stack)
-                                                                                                                      .getCompound(0)
-                                                                                                                      .getString("id")
-                                                                                                                      .contains(filter.toLowerCase(Locale.US)));
+            || stack.getDescriptionId().toLowerCase(Locale.US).contains(filter.toLowerCase(Locale.US))
+            || stack.getHoverName().getString().toLowerCase(Locale.US).contains(filter.toLowerCase(Locale.US))
+            || (stack.getItem() instanceof EnchantedBookItem && EnchantedBookItem.getEnchantments(stack)
+            .getCompound(0)
+            .getString("id")
+            .contains(filter.toLowerCase(Locale.US)));
         allItems.clear();
         allItems.addAll(getBlockList(filterPredicate));
         allItems.sort(Comparator.comparingInt(s1 -> StringUtils.getLevenshteinDistance(s1.getHoverName().getString(), filter)));
@@ -236,6 +249,8 @@ public class WindowPostBox extends AbstractWindowRequestTree
     public void onUpdate()
     {
         super.onUpdate();
+        this.requestTreeHandler.onWindowUpdate();
+
         if (tick > 0 && --tick == 0)
         {
             updateResources();

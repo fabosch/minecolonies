@@ -1,4 +1,4 @@
-package com.minecolonies.core.client.gui;
+package com.minecolonies.core.client.gui.requesttree;
 
 import com.google.common.collect.ImmutableList;
 import com.minecolonies.api.colony.requestsystem.requestable.IStackBasedTask;
@@ -17,11 +17,14 @@ import com.minecolonies.api.colony.requestsystem.requestable.IDeliverable;
 import com.minecolonies.api.colony.requestsystem.token.IToken;
 import com.minecolonies.api.util.InventoryUtils;
 import com.minecolonies.core.Network;
+import com.minecolonies.core.client.gui.AbstractWindowSkeleton;
+import com.minecolonies.core.client.gui.WindowRequestDetail;
 import com.minecolonies.core.client.gui.citizen.MainWindowCitizen;
 import com.minecolonies.core.colony.requestsystem.requesters.IBuildingBasedRequester;
 import com.minecolonies.core.colony.requestsystem.requests.StandardRequests;
 import com.minecolonies.core.network.messages.server.colony.UpdateRequestStateMessage;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
@@ -40,9 +43,10 @@ import static com.minecolonies.api.util.constant.WindowConstants.*;
 import static com.minecolonies.core.colony.requestsystem.requests.AbstractRequest.MISSING;
 
 /**
- * BOWindow for the request trees.
+ * Handler for windows containing request trees.
+ * Replaced logic in AbstractWindowRequestTree
  */
-public abstract class AbstractWindowRequestTree extends AbstractWindowSkeleton
+public class DefaultRequestTreeHandler
 {
     /**
      * The colony of the citizen.
@@ -57,12 +61,12 @@ public abstract class AbstractWindowRequestTree extends AbstractWindowSkeleton
     /**
      * Inventory of the player.
      */
-    private final Inventory inventory = this.mc.player.getInventory();
+    protected final Inventory inventory = Minecraft.getInstance().player.getInventory();
 
     /**
      * Is the player in creative or not.
      */
-    private final boolean isCreative = this.mc.player.isCreative();
+    protected final boolean isCreative = Minecraft.getInstance().player.isCreative();
 
     /**
      * Life count.
@@ -74,34 +78,37 @@ public abstract class AbstractWindowRequestTree extends AbstractWindowSkeleton
      */
     private @Nullable final IBuildingView building;
 
+    /*
+     * The window this request tree is attached to.
+     */
+    protected final AbstractWindowSkeleton attachedWindow;
+
     /**
      * Constructor to initiate the window request tree windows.
      *
      * @param building citizen to bind the window to.
-     * @param pane     the string name of the pane.
      * @param colony   the colony it belongs to.
+     * @param attachedWindow the window this request tree is attached to.
      */
-    public AbstractWindowRequestTree(final BlockPos building, final String pane, final IColonyView colony)
+    public DefaultRequestTreeHandler(final BlockPos building, final IColonyView colony, final AbstractWindowSkeleton attachedWindow)
     {
-        super(pane);
-        this.colony = colony;
         this.building = colony.getBuilding(building);
-        resourceList = findPaneOfTypeByID(WINDOW_ID_LIST_REQUESTS, ScrollingList.class);
+        this.colony = colony;
+        this.attachedWindow = attachedWindow;
 
-        registerButton(REQUEST_DETAIL, this::detailedClicked);
-        registerButton(REQUEST_CANCEL, this::cancel);
+        resourceList = this.attachedWindow.findPaneOfTypeByID(WINDOW_ID_LIST_REQUESTS, ScrollingList.class);
+
+        this.attachedWindow.registerButton(REQUEST_DETAIL, this::detailedClicked);
+        this.attachedWindow.registerButton(REQUEST_CANCEL, this::cancel);
 
         if (canFulFill())
         {
-            registerButton(REQUEST_FULLFIL, this::fulfill);
+            this.attachedWindow.registerButton(REQUEST_FULLFIL, this::fulfill);
         }
     }
 
-    @Override
-    public void onUpdate()
+    public void onWindowUpdate()
     {
-        super.onUpdate();
-
         if (!Screen.hasShiftDown())
         {
             lifeCount++;
@@ -111,11 +118,8 @@ public abstract class AbstractWindowRequestTree extends AbstractWindowSkeleton
     /**
      * Called when the gui is opened by an player.
      */
-    @Override
-    public void onOpened()
+    public void onWindowOpened()
     {
-        super.onOpened();
-
         if (resourceList != null)
         {
             updateRequests();
@@ -123,7 +127,7 @@ public abstract class AbstractWindowRequestTree extends AbstractWindowSkeleton
         if (colony == null)
         {
             Log.getLogger().warn("Colony and/or building null, closing window.");
-            close();
+            this.attachedWindow.close();
         }
     }
 
@@ -149,7 +153,7 @@ public abstract class AbstractWindowRequestTree extends AbstractWindowSkeleton
      *
      * @param request the request to cancel.
      */
-    protected void cancel(@NotNull final IRequest<?> request)
+    public void cancel(@NotNull final IRequest<?> request)
     {
         building.onRequestedRequestCancelled(colony.getRequestManager(), request);
         Network.getNetwork().sendToServer(new UpdateRequestStateMessage(colony, request.getId(), RequestState.CANCELLED, null));
@@ -286,7 +290,7 @@ public abstract class AbstractWindowRequestTree extends AbstractWindowSkeleton
 
         if (getOpenRequestTreeOfBuilding().size() > row)
         {
-            new WindowRequestDetail(this, getOpenRequestTreeOfBuilding().get(row).getRequest(), colony.getID()).open();
+            new WindowRequestDetail(this.attachedWindow, getOpenRequestTreeOfBuilding().get(row).getRequest(), colony.getID()).open();
         }
     }
 
@@ -372,7 +376,7 @@ public abstract class AbstractWindowRequestTree extends AbstractWindowSkeleton
                     rowPane.findPaneOfTypeByID(REQUEST_SHORT_DETAIL, Text.class).setText(Component.literal(request.getShortDisplayString().getString().replace("§f", "")).withStyle(ChatFormatting.BLACK));
                 }
 
-                PaneBuilders.tooltipBuilder().hoverPane(findPaneByID(REQUEST_DETAIL)).build().setText(Component.translatable(DETAILS));
+                PaneBuilders.tooltipBuilder().hoverPane(rowPane.findPaneByID(REQUEST_DETAIL)).build().setText(Component.translatable(DETAILS));
                 if (!cancellable(request))
                 {
                     rowPane.findPaneOfTypeByID(REQUEST_CANCEL, ButtonImage.class).hide();
@@ -446,7 +450,7 @@ public abstract class AbstractWindowRequestTree extends AbstractWindowSkeleton
                 }
             }
 
-            if (this instanceof MainWindowCitizen && !((MainWindowCitizen) this).getCitizen().getInventory().hasSpace())
+            if (this.attachedWindow instanceof MainWindowCitizen && !((MainWindowCitizen) this.attachedWindow).getCitizen().getInventory().hasSpace())
             {
                 return false;
             }

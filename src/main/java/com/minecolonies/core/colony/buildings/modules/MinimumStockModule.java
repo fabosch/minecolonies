@@ -13,6 +13,7 @@ import com.minecolonies.api.crafting.ItemStorage;
 import com.minecolonies.api.util.InventoryUtils;
 import com.minecolonies.api.util.ItemStackUtils;
 import com.minecolonies.api.util.WorldUtil;
+import com.minecolonies.core.colony.buildings.workerbuildings.PostBox;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
@@ -57,6 +58,11 @@ public class MinimumStockModule extends AbstractBuildingModule implements IMinim
     private int minimumStockSize()
     {
         final double increase = 1 + building.getColony().getResearchManager().getResearchEffects().getEffectStrength(MINIMUM_STOCK);
+
+        /* special case for the Postbox */
+        if(building instanceof PostBox) {
+            return 5;
+        }
 
         return (int) (building.getBuildingLevel() * STOCK_PER_LEVEL * increase);
     }
